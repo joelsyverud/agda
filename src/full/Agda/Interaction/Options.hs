@@ -113,6 +113,7 @@ data CommandLineOptions = Options
   , optOptimSmashing    :: Bool
   , optCompileDir       :: Maybe FilePath
   -- ^ In the absence of a path the project root is used.
+  , optDumpSignatures   :: Bool -- ^ Dump type signatures of current main file.
   , optGenerateVimFile  :: Bool
   , optGenerateLaTeX    :: Bool
   , optGenerateHTML     :: Bool
@@ -209,6 +210,7 @@ defaultOptions = Options
   , optUHCFlags         = []
   , optOptimSmashing    = True
   , optCompileDir       = Nothing
+  , optDumpSignatures   = False
   , optGenerateVimFile  = False
   , optGenerateLaTeX    = False
   , optGenerateHTML     = False
@@ -291,6 +293,8 @@ checkOpts opts
       throwError "Choose at most one: input file or --interaction.\n"
   | not (atMostOne $ interactive ++ [\x -> optGhcCompile x, optEpicCompile, optJSCompile]) =
       throwError "Choose at most one: compilers/--interactive/--interaction.\n"
+  | not (atMostOne $ interactive ++ [optDumpSignatures]) =
+      throwError "Choose at most one: --dump/--interactive/--interaction.\n"
   | not (atMostOne $ interactive ++ [optGenerateHTML]) =
       throwError "Choose at most one: --html/--interactive/--interaction.\n"
   | not (atMostOne $ interactive ++ [isJust . optDependencyGraph]) =
@@ -511,6 +515,9 @@ uhcTraceLevelFlag i o = return $ o { optUHCTraceLevel = read i }
 uhcFlagsFlag :: String -> Flag CommandLineOptions
 uhcFlagsFlag s o = return $ o { optUHCFlags = optUHCFlags o ++ [s] }
 
+dumpFlag :: Flag CommandLineOptions
+dumpFlag o = return $ o { optDumpSignatures = True }
+
 htmlFlag :: Flag CommandLineOptions
 htmlFlag o = return $ o { optGenerateHTML = True }
 
@@ -573,6 +580,7 @@ standardOptions =
                     "start in interactive mode"
     , Option []     ["interaction"] (NoArg ghciInteractionFlag)
                     "for use with the Emacs mode"
+    , Option []     ["dump"] (NoArg dumpFlag) "dump type signatures"
     , Option ['c']  ["compile", "ghc"] (NoArg compileGhcFlag)
                     "compile program using the GHC backend"
     , Option []     ["ghc-dont-call-ghc"] (NoArg ghcDontCallGhcFlag) "Don't call ghc, just write the GHC Haskell files."
